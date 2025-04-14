@@ -1,0 +1,61 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+## Testing
+
+# K6
+*.json # Ignore temporary JSON outputs (unless needed)
+*.csv  # Ignore exported test data
+*.html # Ignore K6 HTML reports
+*.bin  # Ignore compiled binaries from K6
+k6-report/
+k6-results/
+k6-summary.log
+
+# Cypress
+cypress/videos/
+cypress/screenshots/
+cypress/downloads/
+cypress/results/
+cypress/logs/
+cypress/report/
+cypress/fixtures
+cypress/coverage
+cypress/coverage-final.json
+cypress/coverage-istanbul.json
+cypress/coverage-*.json
+
+# Cypress environment files
+cypress.env.json
+cypress.json
+
+# Jest
+coverage/
+jest-cache/
+jest-report/
+junit.xml
+*.test-results.json
+.vscode/ # Avoid storing VS Code workspace settings

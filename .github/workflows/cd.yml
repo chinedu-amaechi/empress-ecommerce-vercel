@@ -1,0 +1,384 @@
+# .github/workflows/cd.yml
+name: Continuous Deployment
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version tag'
+        required: false
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Prepare Deployment
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.versioning.outputs.version }}
+      deploy_id: ${{ steps.create_deployment.outputs.deployment_id }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      
+      - name: Set up deployment environment
+        id: environment
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=production" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Generate version
+        id: versioning
+        run: |
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(date +'%Y%m%d').${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Create GitHub Deployment
+        id: create_deployment
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/{repo}/deployments
+          repo: ${{ github.repository }}
+          ref: ${{ github.ref }}
+          environment: ${{ steps.environment.outputs.environment }}
+          production_environment: ${{ steps.environment.outputs.environment == 'production' }}
+          auto_merge: false
+          required_contexts: []
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Sentry Release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: empress-org
+          SENTRY_PROJECT: empress-platform
+        with:
+          environment: ${{ steps.environment.outputs.environment }}
+          version: ${{ steps.versioning.outputs.version }}
+          sourcemaps: ./apps/empress-app/.next
+          ignore_missing: true
+
+  deploy-frontend-customer:
+    name: Deploy Customer Frontend (Vercel)
+    needs: prepare
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/empress-app
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './apps/empress-app/package-lock.json'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.PROD_API_URL }}
+          NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME: 'du7eu4jhl'
+          NEXT_PUBLIC_STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          NEXT_PUBLIC_RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        id: vercel-deployment
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_CUSTOMER_APP_ID }}
+          working-directory: ./apps/empress-app
+          vercel-args: '--prod'
+          
+      - name: Run post-deployment tests
+        run: npx playwright test
+        env:
+          BASE_URL: ${{ steps.vercel-deployment.outputs.preview-url }}
+          
+      - name: Update GitHub Deployment Status
+        if: always()
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/{repo}/deployments/{deployment_id}/statuses
+          repo: ${{ github.repository }}
+          deployment_id: ${{ needs.prepare.outputs.deploy_id }}
+          state: ${{ job.status == 'success' && 'success' || 'failure' }}
+          environment_url: ${{ steps.vercel-deployment.outputs.preview-url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-frontend-admin:
+    name: Deploy Admin Frontend (Vercel)
+    needs: [prepare, deploy-frontend-customer]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/empress-admin-app
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: './apps/empress-admin-app/package-lock.json'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: npm run build
+        env:
+          VITE_API_URL: ${{ secrets.PROD_API_URL }}
+          VITE_CLOUDINARY_CLOUD_NAME: 'du7eu4jhl'
+          VITE_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          VITE_RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        id: vercel-deployment
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_ADMIN_APP_ID }}
+          working-directory: ./apps/empress-admin-app
+          vercel-args: '--prod'
+          
+      - name: Set Vercel domain protection
+        run: |
+          vercel --token ${{ secrets.VERCEL_TOKEN }} deployment-protection \
+            ${{ steps.vercel-deployment.outputs.preview-url }} \
+            --protection-bypass-for-automation
+            
+      - name: Update GitHub Deployment Status
+        if: always()
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/{repo}/deployments/{deployment_id}/statuses
+          repo: ${{ github.repository }}
+          deployment_id: ${{ needs.prepare.outputs.deploy_id }}
+          state: ${{ job.status == 'success' && 'success' || 'failure' }}
+          environment_url: ${{ steps.vercel-deployment.outputs.preview-url }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-backend:
+    name: Deploy Backend API (Azure)
+    needs: [prepare, deploy-frontend-customer]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./apps/empress-backend
+    steps:
+      - uses: actions/checkout@v3
+      
+      # Set up Azure authentication
+      - name: Log in to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      
+      # Set up Docker for Azure Container Registry
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Log in to ACR
+        uses: docker/login-action@v2
+        with:
+          registry: empressregistry.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      
+      # Build and push Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./apps/empress-backend
+          push: true
+          tags: |
+            empressregistry.azurecr.io/empress-backend:${{ needs.prepare.outputs.version }}
+            empressregistry.azurecr.io/empress-backend:latest
+          build-args: |
+            SENTRY_RELEASE=${{ needs.prepare.outputs.version }}
+          cache-from: type=registry,ref=empressregistry.azurecr.io/empress-backend:buildcache
+          cache-to: type=registry,ref=empressregistry.azurecr.io/empress-backend:buildcache,mode=max
+      
+      # Deploy to Azure Container Apps with blue-green strategy
+      - name: Deploy to Azure Container Apps
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          resourceGroup: empress-production
+          containerAppName: empress-backend
+          imageToDeploy: empressregistry.azurecr.io/empress-backend:${{ needs.prepare.outputs.version }}
+          targetPort: 5000
+          ingress: external
+          environmentVariables: |
+            NODE_ENV=production
+            MONGODB_URI=mongodb+srv://faruqayo:69eqwl3fDWqpit0V@cluster0.yse2dvd.mongodb.net/
+            MONGODB_DB_NAME=empress
+            JWT_SECRET=69eqwl3fDWqpit0V
+            CLOUDINARY_CLOUD_NAME=du7eu4jhl
+            CLOUDINARY_API_KEY=166487844245893
+            CLOUDINARY_API_SECRET=gHCefgSVKgsipNIlBbv-o-P0DSM
+            CLIENT_URL=https://empress-shop.vercel.app
+            ADMIN_URL=https://empress-admin.vercel.app
+            YOUR_DOMAIN=https://empress-shop.vercel.app
+            STRIPE_API_KEY=sk_test_51PoDpXP1pCIivRmDfoBitAX2rf635lRHXETuaF6qW4dJwPABBFcnQnvXC4VovT1oFNrNmE7RDl6AOkb9TN2HUuEK00j4ss46vw
+            MAILTRAP_TOKEN=45e5600500c65c3d4c522c0d7f920723
+            MAILTRAP_SENDER_EMAIL=hello@devfaruqayo.com
+            MAILTRAP_SENDER_NAME=Mailtrap Test
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            SENTRY_RELEASE=${{ needs.prepare.outputs.version }}
+          minReplicas: 2
+          maxReplicas: 10
+          revisionSuffix: ${{ needs.prepare.outputs.version }}
+          useExistingRevision: false
+          trafficWeight: |
+            {"latest":100,"${{ needs.prepare.outputs.version }}":0}
+      
+      # Check deployment health before traffic switch
+      - name: Pre-traffic health check
+        run: |
+          API_URL=$(az containerapp revision show \
+            --resource-group empress-production \
+            --name empress-backend \
+            --revision ${{ needs.prepare.outputs.version }} \
+            --query properties.fqdn -o tsv)
+          echo "Checking new revision at https://$API_URL"
+          for i in {1..12}; do
+            if curl -sf "https://$API_URL/health" > /dev/null; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 10
+          done
+          echo "Health check failed after multiple attempts"
+          exit 1
+      
+      # Gradually shift traffic to new revision
+      - name: Shift traffic to new revision
+        run: |
+          echo "Starting traffic shift to new revision"
+          # First shift 10% to new revision
+          az containerapp revision set-traffic \
+            --resource-group empress-production \
+            --name empress-backend \
+            --revision-weight latest=90 ${{ needs.prepare.outputs.version }}=10
+          sleep 30
+          
+          # If monitoring looks good, shift 50%
+          az containerapp revision set-traffic \
+            --resource-group empress-production \
+            --name empress-backend \
+            --revision-weight latest=50 ${{ needs.prepare.outputs.version }}=50
+          sleep 60
+          
+          # Complete the shift to 100%
+          az containerapp revision set-traffic \
+            --resource-group empress-production \
+            --name empress-backend \
+            --revision-weight latest=0 ${{ needs.prepare.outputs.version }}=100
+          
+          # Make the new revision "latest"
+          az containerapp revision deactivate \
+            --resource-group empress-production \
+            --name empress-backend \
+            --revision latest
+          
+          echo "Traffic shift complete!"
+      
+      # Run post-deployment smoke tests
+      - name: Run Smoke Tests
+        run: |
+          API_URL=$(az containerapp show --resource-group empress-production --name empress-backend --query properties.configuration.ingress.fqdn -o tsv)
+          echo "Running smoke tests against https://$API_URL"
+          curl -sf https://$API_URL/health || exit 1
+          curl -sf https://$API_URL/api/admin/collections || exit 1
+          
+      - name: Update GitHub Deployment Status
+        if: always()
+        uses: octokit/request-action@v2.x
+        with:
+          route: POST /repos/{repo}/deployments/{deployment_id}/statuses
+          repo: ${{ github.repository }}
+          deployment_id: ${{ needs.prepare.outputs.deploy_id }}
+          state: ${{ job.status == 'success' && 'success' || 'failure' }}
+          environment_url: ${{ format('https://{0}', steps.get_url.outputs.api_url) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notification:
+    name: Deployment Notification
+    needs: [prepare, deploy-frontend-customer, deploy-frontend-admin, deploy-backend]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployment status
+        id: deployment_status
+        run: |
+          if [[ "${{ needs.deploy-frontend-customer.result }}" == "success" && 
+                "${{ needs.deploy-frontend-admin.result }}" == "success" && 
+                "${{ needs.deploy-backend.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Send Teams notification
+        uses: aliencube/microsoft-teams-actions@v0.8.0
+        with:
+          webhook_uri: ${{ secrets.MS_TEAMS_WEBHOOK_URI }}
+          title: "${{ steps.deployment_status.outputs.emoji }} Empress Platform Deployment ${{ steps.deployment_status.outputs.status }}"
+          summary: "Deployment to production ${{ steps.deployment_status.outputs.status }}"
+          sections: |
+            [{
+              "activityTitle": "Deployment Summary",
+              "facts": [
+                { "name": "Version", "value": "${{ needs.prepare.outputs.version }}" },
+                { "name": "Commit", "value": "${{ github.sha }}" },
+                { "name": "Customer Frontend", "value": "https://empress-shop.vercel.app" },
+                { "name": "Admin Dashboard", "value": "https://empress-admin.vercel.app" },
+                { "name": "Backend API", "value": "https://empress-api.azurecontainerapps.io" },
+                { "name": "Sentry Release", "value": "https://sentry.io/organizations/empress-org/releases/${{ needs.prepare.outputs.version }}/" }
+              ],
+              "markdown": true
+            }]
+          actions: |
+            [{
+              "@type": "OpenUri",
+              "name": "View Deployment",
+              "targets": [{ "os": "default", "uri": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}" }]
+            }]
+          themeColor: ${{ steps.deployment_status.outputs.color }}
