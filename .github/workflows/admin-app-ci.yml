@@ -1,0 +1,42 @@
+name: Admin App CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/empress-admin-app/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/empress-admin-app/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: apps/empress-admin-app
+        
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'apps/empress-admin-app/package-lock.json'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run lint
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build application
+        run: npm run build
