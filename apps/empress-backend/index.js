@@ -56,7 +56,7 @@ app.use(bodyParser.json());
 app.use(
   cors({
     origin: [
-      "https://your-admin-app.vercel.app", // Replace with actual domain after deployment
+      "https://empress-admin-panel.vercel.app", // Replace with actual domain after deployment
       "https://your-customer-app.vercel.app", // Replace with actual domain after deployment
       "http://localhost:5173", // Admin app dev environment
       "http://localhost:3000", // Customer app dev environment
