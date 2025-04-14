@@ -61,9 +61,9 @@ const ProductPageSearch = ({
         collection: collectionParam,
       }));
     }
-  }, [searchParams]);
+  }, [searchParams, query, activeFilters.collection]);
 
-  // Handle search input changes - immediately filter products on the page
+  // Handle search input changes - immediately filter products
   useEffect(() => {
     // Notify parent component about search to filter products
     onSearchChange(query);
@@ -121,7 +121,7 @@ const ProductPageSearch = ({
             placeholder="Filter products..."
             value={query}
             onChange={handleInputChange}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-[#11296B] focus:border-[#11296B] bg-white"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-[#11296] focus:border-[#11296B] bg-white"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg

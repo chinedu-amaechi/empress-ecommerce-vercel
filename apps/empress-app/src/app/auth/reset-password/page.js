@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -12,7 +12,8 @@ import Heading from "@/components/ui/heading";
 import Footer from "@/components/layout/footer";
 import { postResetPassword } from "@/lib/auth-services";
 
-function ResetPassword() {
+// Create a client component that uses useSearchParams
+function ResetPasswordForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -48,13 +49,14 @@ function ResetPassword() {
     };
   }, []);
 
-    const onSubmit = async (data) => {
-      console.log("Form data:", data); // Debugging line
-      
+  const onSubmit = async (data) => {
+    console.log("Form data:", data); // Debugging line
+
     if (data.password !== data.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
+
     try {
       setIsSubmitting(true);
       const response = await postResetPassword({
@@ -164,4 +166,20 @@ function ResetPassword() {
   );
 }
 
-export default ResetPassword;
+// Main page component with Suspense boundary
+export default function ResetPassword() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#11296B] border-r-transparent"></div>
+            <p className="mt-2 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
+  );
+}
