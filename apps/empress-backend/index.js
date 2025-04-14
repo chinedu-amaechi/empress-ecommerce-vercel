@@ -50,7 +50,20 @@ connectToDatabase().catch((err) =>
 
 // Middleware
 app.use(bodyParser.json());
-app.use(cors());
+
+// Enable CORS for specific domains
+// This is important for serverless functions to work with Vercel
+app.use(
+  cors({
+    origin: [
+      "https://your-admin-app.vercel.app", // Replace with actual domain after deployment
+      "https://your-customer-app.vercel.app", // Replace with actual domain after deployment
+      "http://localhost:5173", // Admin app dev environment
+      "http://localhost:3000", // Customer app dev environment
+    ],
+    credentials: true,
+  })
+);
 
 // custom middleware
 // route to check if the request is authenticated
