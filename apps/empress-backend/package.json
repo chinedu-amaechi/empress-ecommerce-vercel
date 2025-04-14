@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "The REST api for the empress application",
   "license": "ISC",
-  "author": "Faruq Ayomide",
+  "author": "Faruq Ayomide and Chinedu Amaechi",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "echo 'No build step required'"
+    "vercel-build": "echo 'Build completed'"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -26,5 +26,8 @@
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
     "stripe": "^18.0.0"
+  },
+  "engines": {
+    "node": ">=16.20.1"
   }
 }

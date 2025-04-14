@@ -1,11 +1,19 @@
-// In-built node module
-import fs from "fs";
+// For serverless environments, file deletion is handled differently
 
-// Function to delete a file
 export default async function deleteFile(filePath) {
-  fs.unlink(filePath, (err) => {
-    if (err) {
-      console.error(err);
+  // In a serverless environment, this is a no-op
+  // When running locally, we can still delete files
+  if (process.env.NODE_ENV !== "production" && filePath) {
+    try {
+      const fs = await import("fs");
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Error deleting file:", err);
+        }
+      });
+    } catch (error) {
+      console.error("Error importing fs module:", error);
     }
-  });
+  }
+  return true;
 }

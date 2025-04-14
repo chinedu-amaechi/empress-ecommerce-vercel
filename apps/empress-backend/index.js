@@ -20,15 +20,33 @@ import Customer from "./models/customer.js";
  * Initializes and configures the Express application.
  */
 const app = express();
-const port = 5000;
 
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  dbName: process.env.MONGODB_DB_NAME,
-});
+// Database connection handler with connection pooling optimized for serverless
+let cachedDb = null;
+async function connectToDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  // Connect to MongoDB
+  const client = await mongoose.connect(process.env.MONGODB_URI, {
+    dbName: process.env.MONGODB_DB_NAME,
+    // These options help with serverless environments
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  });
+
+  cachedDb = client;
+  return client;
+}
+
+// Connect to database on startup
+connectToDatabase().catch((err) =>
+  console.error("Database connection error:", err)
+);
 
 // Middleware
 app.use(bodyParser.json());
@@ -62,7 +80,7 @@ app.use(async (req, res, next) => {
 
 // Routes
 app.get("/", (req, res) => {
-  return serverResponse(res, 200, "Welcome to the API", null);
+  return serverResponse(res, 200, "Welcome to the Empress API", null);
 });
 
 app.use("/api/admin", adminRoutes);
@@ -80,9 +98,13 @@ app.use((error, req, res, next) => {
   return serverResponse(res, 500, "Internal server error", null);
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
+// Start server if not in serverless environment
+if (process.env.NODE_ENV !== "production") {
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+  });
+}
 
+// Export for serverless use
 export default app;

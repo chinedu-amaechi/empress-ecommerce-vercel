@@ -3,10 +3,13 @@ import { validationResult } from "express-validator";
 
 // Custom modules
 import serverResponse from "../utils/serverResponse.js";
-import deleteFile from "../utils/deleteFile.js";
 import Product from "../models/product.js";
 import Collection from "../models/collection.js";
-import { deleteImage, uploadImage } from "../utils/helper.js";
+import {
+  deleteImage,
+  uploadImage,
+  uploadImageBuffer,
+} from "../utils/helper.js";
 import mongoose from "mongoose";
 import Customer from "../models/customer.js";
 
@@ -162,9 +165,11 @@ export async function deleteProduct(req, res, next) {
     }
 
     // Delete the images from cloudinary
-    // product.imagesUrl.forEach((image) => {
-    //   deleteImage(image.publicId);
-    // });
+    for (const image of product.imagesUrl) {
+      if (image.publicId) {
+        await deleteImage(image.publicId);
+      }
+    }
 
     // Delete the product from the database
     await Product.findByIdAndDelete(productId);
@@ -323,39 +328,51 @@ export async function putProductImage(req, res, next) {
       : null;
 
     if (!productId) {
-      // Delete any files that were uploaded
-      if (req.files.images) {
-        req.files.images.forEach((file) => {
-          deleteFile(file.filepath);
-        });
-      }
       return serverResponse(res, 400, "Invalid product ID", null);
     }
 
     // Find the product in the database
     const product = await Product.findById(productId);
     if (!product) {
-      // Delete any files that were uploaded
-      if (req.files.images) {
-        req.files.images.forEach((file) => {
-          deleteFile(file.filepath);
-        });
-      }
       return serverResponse(res, 404, "Product not found", null);
     }
 
     // uploading images to cloudinary
     const imagesCloudUrl = [];
-    for (let i = 0; i < req.files.images.length; i++) {
-      const file = req.files.images[i];
-      const publicId = productId + "-" + Date.now();
-      const { optimizeUrl, autoCropUrl } = await uploadImage(
-        file.filepath,
-        publicId
-      );
-      imagesCloudUrl.push({ optimizeUrl, autoCropUrl, publicId });
+    let uploadedImages = req.files.images;
 
-      deleteFile(file.filepath);
+    // Handle single image case (formidable sometimes doesn't return an array for single file)
+    if (!Array.isArray(uploadedImages)) {
+      uploadedImages = [uploadedImages];
+    }
+
+    for (let i = 0; i < uploadedImages.length; i++) {
+      const file = uploadedImages[i];
+      const publicId = `product-${productId}-${Date.now()}-${i}`;
+
+      try {
+        // For serverless environment, use the buffer
+        const buffer = Buffer.concat(file._buf || []);
+
+        // Use a data URI for Cloudinary upload
+        const base64Data = buffer.toString("base64");
+        const dataURI = `data:${file.mimetype};base64,${base64Data}`;
+
+        const { optimizeUrl, autoCropUrl } = await uploadImageBuffer(
+          dataURI,
+          publicId
+        );
+
+        imagesCloudUrl.push({ optimizeUrl, autoCropUrl, publicId });
+      } catch (uploadError) {
+        console.error("Image upload error:", uploadError);
+        return serverResponse(
+          res,
+          500,
+          "Failed to upload image to cloud storage",
+          null
+        );
+      }
     }
 
     // Add the images to the product
@@ -369,6 +386,7 @@ export async function putProductImage(req, res, next) {
       product.toObject()
     );
   } catch (error) {
+    console.error("Error in putProductImage:", error);
     next(error);
   }
 }
@@ -409,7 +427,7 @@ export async function removeProductImage(req, res, next) {
     }
 
     // Delete the image from cloudinary
-    deleteImage(req.body.publicId);
+    await deleteImage(req.body.publicId);
 
     // Remove the image from the product
     product.imagesUrl.splice(imageIndex, 1);
@@ -419,7 +437,7 @@ export async function removeProductImage(req, res, next) {
       res,
       200,
       "Image removed from product successfully",
-      product.toObject
+      product.toObject()
     );
   } catch (error) {
     next(error);
@@ -484,10 +502,6 @@ export async function addToCollection(req, res, next) {
 export async function postNewCollection(req, res, next) {
   try {
     if (req.user.role !== "admin") {
-      // Delete any files that were uploaded
-      if (req.files.image) {
-        deleteFile(req.files.image[0].filepath);
-      }
       return serverResponse(res, 401, "Unauthorized access", null);
     }
 
@@ -499,20 +513,12 @@ export async function postNewCollection(req, res, next) {
     }
 
     if (errors.length > 0) {
-      // Delete any files that were uploaded
-      if (req.files.image) {
-        deleteFile(req.files.image[0].filepath);
-      }
       return serverResponse(res, 400, errors[0].msg, null);
     }
 
     // checking if collection with the same name exists
     const collectionExists = await Collection.findOne({ name: req.body.name });
     if (collectionExists) {
-      // Delete any files that were uploaded
-      if (req.files.image) {
-        deleteFile(req.files.image[0].filepath);
-      }
       return serverResponse(
         res,
         400,
@@ -523,11 +529,19 @@ export async function postNewCollection(req, res, next) {
 
     // uploading image to cloudinary
     const publicId = req.body.name + "-" + Date.now();
-    const { optimizeUrl, autoCropUrl } = await uploadImage(
-      req.files.image[0].filepath,
+
+    // For serverless environment, use the buffer
+    const file = req.files.image[0];
+    const buffer = Buffer.concat(file._buf || []);
+
+    // Use a data URI for Cloudinary upload
+    const base64Data = buffer.toString("base64");
+    const dataURI = `data:${file.mimetype};base64,${base64Data}`;
+
+    const { optimizeUrl, autoCropUrl } = await uploadImageBuffer(
+      dataURI,
       publicId
     );
-    deleteFile(req.files.image[0].filepath);
 
     // Add the collection to the database
     const newCollection = new Collection({
@@ -594,10 +608,6 @@ export async function getSingleCollection(req, res, next) {
 export async function updateCollection(req, res, next) {
   try {
     if (req.user.role !== "admin") {
-      // Delete any files that were uploaded
-      if (req.files.image) {
-        deleteFile(req.files.image[0].filepath);
-      }
       return serverResponse(res, 401, "Unauthorized access", null);
     }
 
@@ -605,10 +615,6 @@ export async function updateCollection(req, res, next) {
 
     // Check if there are any validation errors
     if (errors.length > 0) {
-      // Delete any files that were uploaded
-      if (req.files.image) {
-        deleteFile(req.files.image[0].filepath);
-      }
       return serverResponse(res, 400, errors[0].msg, null);
     }
 
@@ -621,12 +627,12 @@ export async function updateCollection(req, res, next) {
       return serverResponse(res, 400, "Invalid collection ID", null);
     }
 
-    const collectionExists = await Collection.findOne({ name: req.body.name });
-    if (collectionExists) {
-      // Delete any files that were uploaded
-      if (req.files.image) {
-        deleteFile(req.files.image[0].filepath);
-      }
+    const collectionWithSameName = await Collection.findOne({
+      name: req.body.name,
+      _id: { $ne: collectionId }, // Exclude the current collection
+    });
+
+    if (collectionWithSameName) {
       return serverResponse(
         res,
         400,
@@ -641,26 +647,32 @@ export async function updateCollection(req, res, next) {
       return serverResponse(res, 404, "Collection not found", null);
     }
 
-    // uploading image to cloudinary
-    let imageUrl = collection.imageUrl;
-    if (req.files.image) {
-      // Delete the old image from cloudinary
-      deleteImage(collection.imageUrl.publicId);
-
-      const publicId = req.body.name + "-" + Date.now();
-      const { optimizeUrl, autoCropUrl } = await uploadImage(
-        req.files.image[0].filepath,
-        publicId
-      );
-      imageUrl = { optimizeUrl, autoCropUrl, publicId };
-      deleteFile(req.files.image[0].filepath);
-    }
-
-    // Update the collection in the database
+    // Update basic collection properties
     collection.name = req.body.name;
     collection.description = req.body.description;
-    collection.imageUrl = imageUrl;
 
+    // uploading image to cloudinary if there's a new image
+    let imageUrl = collection.imageUrl;
+    if (req.files && req.files.image) {
+      // Delete the old image from cloudinary
+      if (collection.imageUrl && collection.imageUrl.publicId) {
+        await deleteImage(collection.imageUrl.publicId);
+      }
+
+      const file = req.files.image[0];
+      const publicId = req.body.name + "-" + Date.now();
+
+      // For serverless environment, use the buffer
+      const buffer = Buffer.concat(file._buf || []);
+
+      // Use a data URI for Cloudinary upload
+      const base64Data = buffer.toString("base64");
+      const dataURI = `data:${file.mimetype};base64,${base64Data}`;
+
+      imageUrl = await uploadImageBuffer(dataURI, publicId);
+    }
+
+    collection.imageUrl = imageUrl;
     await collection.save();
 
     return serverResponse(
@@ -697,7 +709,9 @@ export async function deleteCollection(req, res, next) {
     }
 
     // Delete the image from cloudinary
-    deleteImage(collection.imageUrl.publicId);
+    if (collection.imageUrl && collection.imageUrl.publicId) {
+      await deleteImage(collection.imageUrl.publicId);
+    }
 
     // Delete the collection from the database
     await Collection.findByIdAndDelete(collectionId);
@@ -758,6 +772,7 @@ export async function addProductToCollection(req, res, next) {
 
     // Add the product to the collection
     collection.products.push(productId);
+    collection.itemsCount = collection.itemsCount + 1;
     await collection.save();
 
     return serverResponse(
@@ -821,6 +836,7 @@ export async function removeProductFromCollection(req, res, next) {
 
     // Remove the product from the collection
     collection.products.splice(productIndex, 1);
+    collection.itemsCount = Math.max(0, collection.itemsCount - 1);
     await collection.save();
 
     return serverResponse(

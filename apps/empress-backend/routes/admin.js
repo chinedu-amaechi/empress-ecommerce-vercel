@@ -67,23 +67,76 @@ router.put(
 router.put(
   "/product/add-images/:productId",
   (req, res, next) => {
-    // Parse form data using formidable
+    // Modified formidable setup for serverless environment
     const form = formidable({
-      uploadDir: "./public/temp",
-      createDirsFromUploads: true,
-      keepExtensions: true,
+      // Config options
       maxFiles: 5,
+      maxFileSize: 5 * 1024 * 1024, // 5MB limit
+      multiples: true,
+      keepExtensions: true,
+
+      // Remove disk storage for serverless compatibility
+      uploadDir: undefined,
+
+      // Use memory storage instead
+      fileWriteStreamHandler: () => {
+        const chunks = [];
+        return {
+          write: (chunk) => {
+            chunks.push(chunk);
+          },
+          end: function () {
+            this.buffer = Buffer.concat(chunks);
+          },
+          destroy: () => {},
+        };
+      },
+
+      // Only allow image files
       filter: ({ mimetype }) => {
-        return mimetype.includes("image");
+        return mimetype && mimetype.includes("image");
       },
     });
 
+    // Parse the form
     form.parse(req, (err, fields, files) => {
       if (err) {
+        console.error("Error parsing form:", err);
         return next(err);
       }
 
+      // Store files for access in the controller
       req.files = files;
+
+      // Store additional metadata on each file to make it accessible in the controller
+      if (req.files && req.files.images) {
+        if (Array.isArray(req.files.images)) {
+          req.files.images.forEach((file) => {
+            // Ensure we have buffer access
+            if (file.filepath && !file.buffer) {
+              try {
+                // If for some reason we're in dev mode with real files
+                const fs = require("fs");
+                file.buffer = fs.readFileSync(file.filepath);
+              } catch (error) {
+                console.error("Error reading file:", error);
+              }
+            }
+          });
+        } else {
+          // Handle single file case
+          const file = req.files.images;
+          if (file.filepath && !file.buffer) {
+            try {
+              const fs = require("fs");
+              file.buffer = fs.readFileSync(file.filepath);
+            } catch (error) {
+              console.error("Error reading file:", error);
+            }
+          }
+        }
+      }
+
       next();
     });
   },
@@ -96,33 +149,81 @@ router.delete(
   adminControllers.removeProductImage
 );
 
-// route to add a new collection
+// Route to add a new collection
 router.post(
   "/collection/new",
   (req, res, next) => {
-    // Parse form data using formidable
+    // Modified formidable setup for serverless environment
     const form = formidable({
-      uploadDir: "./public/temp",
-      createDirsFromUploads: true,
-      keepExtensions: true,
+      // Config options
       maxFiles: 1,
+      maxFileSize: 5 * 1024 * 1024, // 5MB limit
+      keepExtensions: true,
+
+      // Remove disk storage for serverless compatibility
+      uploadDir: undefined,
+
+      // Use memory storage instead
+      fileWriteStreamHandler: () => {
+        const chunks = [];
+        return {
+          write: (chunk) => {
+            chunks.push(chunk);
+          },
+          end: function () {
+            this.buffer = Buffer.concat(chunks);
+          },
+          destroy: () => {},
+        };
+      },
+
+      // Only allow image files
       filter: ({ mimetype }) => {
-        return mimetype.includes("image");
+        return mimetype && mimetype.includes("image");
       },
     });
 
     form.parse(req, (err, fields, files) => {
       if (err) {
+        console.error("Error parsing form:", err);
         return next(err);
       }
 
-      // extracting the fields data from the fields array
-      const cleanReqBody = Object.fromEntries(
-        Object.entries(fields).map(([key, value]) => [key, value[0]])
-      );
+      // Process form fields - formidable in newer versions returns arrays
+      const cleanReqBody = {};
+      for (const [key, value] of Object.entries(fields)) {
+        cleanReqBody[key] = Array.isArray(value) ? value[0] : value;
+      }
 
       req.body = cleanReqBody;
       req.files = files;
+
+      // Ensure we have buffer access for collection image
+      if (req.files && req.files.image) {
+        if (Array.isArray(req.files.image)) {
+          req.files.image.forEach((file) => {
+            if (file.filepath && !file.buffer) {
+              try {
+                const fs = require("fs");
+                file.buffer = fs.readFileSync(file.filepath);
+              } catch (error) {
+                console.error("Error reading file:", error);
+              }
+            }
+          });
+        } else {
+          // Handle single file case
+          const file = req.files.image;
+          if (file.filepath && !file.buffer) {
+            try {
+              const fs = require("fs");
+              file.buffer = fs.readFileSync(file.filepath);
+            } catch (error) {
+              console.error("Error reading file:", error);
+            }
+          }
+        }
+      }
 
       next();
     });
@@ -145,29 +246,77 @@ router.get("/collection/:collectionId", adminControllers.getSingleCollection);
 router.put(
   "/collection/update/:collectionId",
   (req, res, next) => {
-    // Parse form data using formidable
+    // Modified formidable setup for serverless environment
     const form = formidable({
-      uploadDir: "./public/temp",
-      createDirsFromUploads: true,
-      keepExtensions: true,
+      // Config options
       maxFiles: 1,
+      maxFileSize: 5 * 1024 * 1024, // 5MB limit
+      keepExtensions: true,
+
+      // Remove disk storage for serverless compatibility
+      uploadDir: undefined,
+
+      // Use memory storage instead
+      fileWriteStreamHandler: () => {
+        const chunks = [];
+        return {
+          write: (chunk) => {
+            chunks.push(chunk);
+          },
+          end: function () {
+            this.buffer = Buffer.concat(chunks);
+          },
+          destroy: () => {},
+        };
+      },
+
+      // Only allow image files
       filter: ({ mimetype }) => {
-        return mimetype.includes("image");
+        return mimetype && mimetype.includes("image");
       },
     });
 
     form.parse(req, (err, fields, files) => {
       if (err) {
+        console.error("Error parsing form:", err);
         return next(err);
       }
 
-      // extracting the fields data from the fields array
-      const cleanReqBody = Object.fromEntries(
-        Object.entries(fields).map(([key, value]) => [key, value[0]])
-      );
+      // Process form fields - formidable in newer versions returns arrays
+      const cleanReqBody = {};
+      for (const [key, value] of Object.entries(fields)) {
+        cleanReqBody[key] = Array.isArray(value) ? value[0] : value;
+      }
 
       req.body = cleanReqBody;
       req.files = files;
+
+      // Ensure we have buffer access for collection image
+      if (req.files && req.files.image) {
+        if (Array.isArray(req.files.image)) {
+          req.files.image.forEach((file) => {
+            if (file.filepath && !file.buffer) {
+              try {
+                const fs = require("fs");
+                file.buffer = fs.readFileSync(file.filepath);
+              } catch (error) {
+                console.error("Error reading file:", error);
+              }
+            }
+          });
+        } else {
+          // Handle single file case
+          const file = req.files.image;
+          if (file.filepath && !file.buffer) {
+            try {
+              const fs = require("fs");
+              file.buffer = fs.readFileSync(file.filepath);
+            } catch (error) {
+              console.error("Error reading file:", error);
+            }
+          }
+        }
+      }
 
       next();
     });
