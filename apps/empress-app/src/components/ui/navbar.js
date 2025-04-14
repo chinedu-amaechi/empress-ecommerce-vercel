@@ -188,15 +188,14 @@ const Navbar = () => {
                     {user === null ? (
                       <>
                         <Link
-                        href="/auth/sign-in"
-                        onClick={(e) => {
-                          if (pathname === "/auth/sign-in") {
-                            e.preventDefault();
+                          href="/auth/sign-in"
+                          onClick={(e) => {
+                            if (pathname === "/auth/sign-in") {
+                              e.preventDefault();
+                            }
                             setActiveDropdown(null);
-                          }
-                        }}
+                          }}
                           className="block px-4 py-2.5 text-base text-gray-700 hover:bg-[#11296B]/10 transition-colors duration-200"
-                          onClick={() => setActiveDropdown(null)}
                         >
                           Sign In
                         </Link>
@@ -365,14 +364,15 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="absolute inset-x-0 top-full bg-white shadow-lg md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-
-          <button
+            <button
               className="flex justify-between w-full px-3 py-2 text-base font-medium text-gray-900 hover:bg-[#11296B]/10 rounded transition-colors duration-200"
               onClick={() => toggleDropdown("mobile-shop")}
             >
               <span>Shop</span>
               <svg
-                className={`w-6 h-6 transition-transform duration-200 ${activeDropdown === "mobile-shop" ? "transform rotate-180" : ""}`}
+                className={`w-6 h-6 transition-transform duration-200 ${
+                  activeDropdown === "mobile-shop" ? "transform rotate-180" : ""
+                }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -389,7 +389,8 @@ const Navbar = () => {
               <div className="pl-4 py-2 space-y-1 border-l-2 border-[#11296B]/20 ml-3">
                 <a
                   href="/collections?collection=Heritage"
-                  className="block py-1.5 text-base text-gray-700 hover:bg-[#11296B]/10 rounded px-3 transition-colors duration-200">
+                  className="block py-1.5 text-base text-gray-700 hover:bg-[#11296B]/10 rounded px-3 transition-colors duration-200"
+                >
                   Collections
                 </a>
                 <a
@@ -426,19 +427,28 @@ const Navbar = () => {
             >
               FAQ
             </a>
-  
-            <Link
-      href="/auth/sign-in"
-      className="flex items-center space-x-2 px-4 py-2 bg-[#11296B] text-white rounded-md hover:bg-opacity-90 transition-all duration-300"
-    >
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-      <span className="text-base font-medium">Sign In</span>
-    </Link>
-                </div>
-                </div>
 
+            <Link
+              href="/auth/sign-in"
+              className="flex items-center space-x-2 px-4 py-2 bg-[#11296B] text-white rounded-md hover:bg-opacity-90 transition-all duration-300"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span className="text-base font-medium">Sign In</span>
+            </Link>
+          </div>
+        </div>
       )}
     </nav>
   );
