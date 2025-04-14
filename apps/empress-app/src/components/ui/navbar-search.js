@@ -1,7 +1,7 @@
 // src/components/ui/navbar-search.js
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import { searchProducts } from "@/lib/product-service";
 
@@ -11,6 +11,22 @@ const NavbarSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef(null);
+
+  // Define performSearch as useCallback to avoid dependency issues
+  const performSearch = useCallback(async () => {
+    if (query.trim().length > 2) {
+      setIsSearching(true);
+      try {
+        const searchResults = await searchProducts(query);
+        setResults(searchResults.slice(0, 5)); // Limit to 5 results
+        setShowResults(true);
+      } catch (error) {
+        console.error("Error searching products:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }
+  }, [query]);
 
   // Debounce search to avoid too many requests
   useEffect(() => {
@@ -23,7 +39,7 @@ const NavbarSearch = () => {
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [query]);
+  }, [query, performSearch]);
 
   // Handle clicks outside search component
   useEffect(() => {
@@ -38,22 +54,6 @@ const NavbarSearch = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // Perform the search for dropdown results - searching ALL products
-  const performSearch = async () => {
-    if (query.trim().length > 2) {
-      setIsSearching(true);
-      try {
-        const searchResults = await searchProducts(query);
-        setResults(searchResults.slice(0, 5)); // Limit to 5 results
-        setShowResults(true);
-      } catch (error) {
-        console.error("Error searching products:", error);
-      } finally {
-        setIsSearching(false);
-      }
-    }
-  };
 
   // Handle search input change
   const handleInputChange = (e) => {
@@ -172,7 +172,7 @@ const NavbarSearch = () => {
                 </li>
               ))}
               <li className="px-4 py-2 text-center">
-                <a
+                
                   href={`/products?q=${encodeURIComponent(query.trim())}`}
                   className="text-xs text-[#11296B] hover:text-[#1E96FC] transition-colors"
                   onClick={() => setShowResults(false)}
