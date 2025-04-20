@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import LoadingState from "@/components/ui/loading-state";
 
 // UI Components
 import Footer from "@/components/layout/footer";
@@ -12,7 +13,7 @@ import ProductHero from "./product-hero";
 import { getAllProducts } from "@/lib/product-service";
 import useCollections from "@/hooks/use-collections";
 
-export default function ProductsPageContent() {
+function ProductsPageContent() {
   const searchParams = useSearchParams();
   const collectionFilter = searchParams.get("collection") || "all";
   const searchQuery = searchParams.get("q") || "";
@@ -465,6 +466,7 @@ export default function ProductsPageContent() {
   );
 }
 
+// Wrapper component for Suspense boundary
 export default function ProductsPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
