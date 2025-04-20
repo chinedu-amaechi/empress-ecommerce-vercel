@@ -11,7 +11,7 @@ import backendUrl from "./backend-url";
 export async function getAllProducts() {
   try {
     // In the future, this would be an API call
-    const response = await fetch(`${backendUrl}/api/admin/products`);
+    const response = await fetch(`${backendUrl}/api/customer/products`);
     const result = await response.json();
 
     // Flatten the collection structure into a single array of products

@@ -127,11 +127,8 @@ export default function ProductsPage() {
       <ProductHero />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12 max-w-screen-2xl">
-
-
         {/* Search and Filters */}
         <div
-
           className={`${
             isFilterFixed ? "sticky top-18 z-30" : ""
           } transition-all duration-300 mb-12`}
@@ -463,8 +460,6 @@ export default function ProductsPage() {
             </button>
           </div>
         )}
-
-        
       </main>
       <Footer />
     </div>
