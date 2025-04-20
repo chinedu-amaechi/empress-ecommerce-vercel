@@ -104,7 +104,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <img
+              <Image
                 className={`w-auto transition-all duration-300 ${"h-12"}`}
                 src="/icons/empress_logo.png"
                 alt="Empress Logo"
