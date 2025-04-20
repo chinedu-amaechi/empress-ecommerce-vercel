@@ -3,12 +3,7 @@
 import { body } from "express-validator";
 
 const productValidationRules = [
-  body("name")
-    .trim()
-    .isString()
-    .toLowerCase()
-    .notEmpty()
-    .withMessage("Name is required"),
+  body("name").trim().isString().notEmpty().withMessage("Name is required"),
   body("price")
     .isNumeric()
     .withMessage("Price must be a number")

@@ -6,6 +6,49 @@ import Stripe from "stripe";
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 
+// This function is used to get all products from the database
+ export async function getAllProducts(req, res, next) {
+   try {
+     const products = await Product.find({ isVisible: true, stock: { $gt: 0 } });
+     return serverResponse(
+       res,
+       200,
+       "Products retrieved successfully",
+       products
+     );
+   } catch (error) {
+     next(error);
+   }
+ }
+ 
+ // This function is used to get a single product from the database
+ export async function getSingleProduct(req, res, next) {
+   try {
+     // Check if the product ID is valid
+     const productId = mongoose.isValidObjectId(req.params.productId)
+       ? req.params.productId
+       : null;
+ 
+     if (!productId) {
+       return serverResponse(res, 400, "Invalid product ID", null);
+     }
+ 
+     // Find the product in the database
+     const product = await Product.findOne({
+       _id: productId,
+       isVisible: true,
+       stock: { $gt: 0 },
+     });
+ 
+     if (!product) {
+       return serverResponse(res, 404, "Product not found", null);
+     }
+     return serverResponse(res, 200, "Product retrieved successfully", product);
+   } catch (error) {
+     next(error);
+   }
+ }
+ 
 export async function addToCart(req, res, next) {
   try {
     if (req.user?.role !== "customer") {
