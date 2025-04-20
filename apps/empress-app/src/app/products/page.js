@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 // UI Components
 import Footer from "@/components/layout/footer";
 import ProductCard from "@/components/product/product-card";
 import ProductHero from "./product-hero";
-import Heading from "@/components/ui/heading";
 
 // Data fetching
 import { getAllProducts } from "@/lib/product-service";
 import useCollections from "@/hooks/use-collections";
 
-export default function ProductsPage() {
+export default function ProductsPageContent() {
   const searchParams = useSearchParams();
   const collectionFilter = searchParams.get("collection") || "all";
   const searchQuery = searchParams.get("q") || "";
@@ -463,5 +462,18 @@ export default function ProductsPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block w-12 h-12 border-4 border-[#11296B]/20 border-t-[#11296B] rounded-full animate-spin mb-4"></div>
+        <p className="text-lg text-gray-600">Loading products...</p>
+      </div>
+    </div>}>
+      <ProductsPageContent />
+    </Suspense>
   );
 }
