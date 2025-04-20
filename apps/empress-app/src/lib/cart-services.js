@@ -44,6 +44,9 @@ export async function addToCart(data) {
 export async function updateCart(data) {
   try {
     const token = localStorage.getItem("token");
+    if (!token) {
+      return { status: 401, message: "No authentication token found" };
+    }
     const response = await fetch(
       `${backendUrl}/api/customer/cart/${data.productId}`,
       {
@@ -58,10 +61,19 @@ export async function updateCart(data) {
         }),
       }
     );
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const result = await response.json();
     return result.data;
   } catch (error) {
     console.error("Error updating cart:", error);
+    return {
+      status: 500,
+      message: "Failed to update cart",
+      error: error.message,
+    };
   }
 }
 
