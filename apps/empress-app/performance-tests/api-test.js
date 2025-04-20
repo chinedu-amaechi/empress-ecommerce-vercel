@@ -1,6 +1,8 @@
 // apps/empress-app/performance-tests/api-test.js
+
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { config } from "./config.js";
 
 export let options = {
   vus: 50,
@@ -8,7 +10,8 @@ export let options = {
 };
 
 export default function () {
-  const baseUrl = "http://localhost:5000"; // Your backend URL from backend-url.js
+  // Use the config baseUrl instead of hardcoding
+  const baseUrl = config.apiUrl; // Use the API URL from config file
 
   // Test collections API
   let collectionsRes = http.get(`${baseUrl}/api/admin/collections`);

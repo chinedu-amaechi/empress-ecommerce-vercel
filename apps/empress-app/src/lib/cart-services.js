@@ -96,3 +96,38 @@ export async function removeFromCart(data) {
     console.error("Error removing from cart:", error);
   }
 }
+
+export async function processPayment(paymentData) {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return {
+        status: 401,
+        message: "Authentication required. Please sign in.",
+      };
+    }
+
+    const response = await fetch(`${backendUrl}/api/customer/payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token,
+      },
+      body: JSON.stringify(paymentData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error processing payment:", error);
+    return {
+      status: 500,
+      message: "Payment processing failed",
+      error: error.message,
+    };
+  }
+}
