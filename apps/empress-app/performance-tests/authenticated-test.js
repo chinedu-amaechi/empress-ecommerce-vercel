@@ -1,6 +1,7 @@
 // apps/empress-app/performance-tests/authenticated-test.js
 import http from "k6/http";
 import { check, sleep } from "k6";
+import { config } from "./config.js"; // Adjust the path as necessary
 
 export let options = {
   vus: 5,
@@ -8,13 +9,15 @@ export let options = {
 };
 
 export default function () {
-  const baseUrl = "http://localhost:3000";
+  const baseUrl = "config.baseUrl"; // Use the base URL from config file
 
   // Step 1: Visit the login page
   let loginPageRes = http.get(`${baseUrl}/auth/sign-in`);
   check(loginPageRes, {
     "login page loaded": (r) => r.status === 200,
   });
+
+  const apiUrl = config.apiUrl; // Use the API URL from config file
 
   // Step 2: Submit login form (adjust this to match your actual login process)
   let loginPayload = {
