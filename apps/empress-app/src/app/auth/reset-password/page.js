@@ -7,7 +7,6 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 
 // Components
-import Button from "@/components/ui/button";
 import Heading from "@/components/ui/heading";
 import Footer from "@/components/layout/footer";
 import { postResetPassword } from "@/lib/auth-services";
