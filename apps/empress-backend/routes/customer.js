@@ -13,6 +13,9 @@ import { body } from "express-validator";
  */
 const router = express.Router();
 
+// route to get all products
+router.get("/products", customerControllers.getAllProducts);
+
 // route to add a product to the cart
 router.post("/cart", customerControllers.addToCart);
 

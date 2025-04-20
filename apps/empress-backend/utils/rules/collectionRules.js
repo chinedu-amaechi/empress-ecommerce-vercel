@@ -5,7 +5,6 @@ const collectionValidationRules = [
   body("name")
     .trim()
     .notEmpty()
-    .toLowerCase()
     .withMessage("Name is required")
     .isLength({ min: 3, max: 100 })
     .withMessage("Name must be between 3 and 100 characters"),
