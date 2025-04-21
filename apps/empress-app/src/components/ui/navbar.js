@@ -6,7 +6,8 @@ import useCollections from "@/hooks/use-collections";
 import { PersonOutline } from "@mui/icons-material";
 import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from 'next/navigation'; 
+import Image from "next/image"; // Added missing image import
+import { usePathname } from "next/navigation";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -20,12 +21,12 @@ const Navbar = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-  // Close mobile menu when route changes
-  setIsMenuOpen(false);
-  // Close any open dropdowns
-  setActiveDropdown(null);
-}, [pathname]);
-  
+    // Close mobile menu when route changes
+    setIsMenuOpen(false);
+    // Close any open dropdowns
+    setActiveDropdown(null);
+  }, [pathname]);
+
   // Refs for dropdown containers
   const dropdownRefs = useRef({});
   const navbarRef = useRef(null);
@@ -108,6 +109,8 @@ const Navbar = () => {
                 className={`w-auto transition-all duration-300 ${"h-12"}`}
                 src="/icons/empress_logo.png"
                 alt="Empress Logo"
+                width={120}
+                height={48}
               />
             </Link>
           </div>
