@@ -7,17 +7,20 @@ const __dirname = dirname(__filename);
 
 const compat = new FlatCompat({
   baseDirectory: __dirname,
+  recommendedConfig: {
+    extends: ["eslint:recommended"],
+  },
 });
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals"),
   {
     rules: {
-      "react/display-name": "off", // Turn off this rule
-      "react/no-unescaped-entities": "off", // Turn off this rule
-      "react-hooks/exhaustive-deps": "warn", // Turn on this rule with a warning level
-      "@next/next/no-img-element": "warn", // Turn on this rule with a warning level
-      "react/jsx-no-duplicate-props": "error", // Turn on this rule with an error level
+      "react/display-name": "off",
+      "react/no-unescaped-entities": "off",
+      "react-hooks/exhaustive-deps": "warn",
+      "@next/next/no-img-element": "warn",
+      "react/jsx-no-duplicate-props": "error",
     },
   },
 ];
