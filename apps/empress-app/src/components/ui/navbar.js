@@ -76,7 +76,7 @@ const Navbar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [activeDropdown, isMenuOpen]);
+  }, [activeDropdown, isMenuOpen, isSearchOpen]);
 
   // Toggle dropdown
   const toggleDropdown = (name) => {
