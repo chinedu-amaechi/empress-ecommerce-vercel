@@ -51,11 +51,11 @@ const OurArtisans = () => {
           <p className="text-lg text-gray-600 leading-relaxed">
             Behind every Empress piece is a dedicated team of individuals, from
             skilled artisans to business experts, all working together to bring
-            our designs to life. Each person's passion, expertise, and
+            our designs to life. Each person&apos;s passion, expertise, and
             commitment to excellence contribute to the creation of every
             bracelet, ensuring that we consistently meet the highest standards.
-            It's the collective effort of our people that drives our success and
-            makes each piece truly exceptional.
+            It&apos;s the collective effort of our people that drives our
+            success and makes each piece truly exceptional.
           </p>
         </motion.div>
 

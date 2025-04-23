@@ -7,12 +7,12 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 
 // Components
+import Button from "@/components/ui/button";
 import Heading from "@/components/ui/heading";
 import Footer from "@/components/layout/footer";
 import { postResetPassword } from "@/lib/auth-services";
 
-// Create a client component that uses useSearchParams
-function ResetPasswordForm() {
+function ResetPassword() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -55,7 +55,6 @@ function ResetPasswordForm() {
       toast.error("Passwords do not match");
       return;
     }
-
     try {
       setIsSubmitting(true);
       const response = await postResetPassword({
@@ -165,20 +164,10 @@ function ResetPasswordForm() {
   );
 }
 
-// Main page component with Suspense boundary
-export default function ResetPassword() {
+export default function Page() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#11296B] border-r-transparent"></div>
-            <p className="mt-2 text-gray-600">Loading...</p>
-          </div>
-        </div>
-      }
-    >
-      <ResetPasswordForm />
+    <Suspense fallback={<div>Loading reset form...</div>}>
+      <ResetPassword />
     </Suspense>
   );
 }

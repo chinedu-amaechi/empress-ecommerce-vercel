@@ -130,7 +130,7 @@ const TestimonialsCarousel = () => {
                   />
                 </div>
                 <blockquote className="text-lg md:text-xl italic text-gray-800 mb-4">
-                  "{testimonials[currentTestimonial].quote}"
+                  &quot;{testimonials[currentTestimonial].quote}&quot;
                 </blockquote>
                 <div>
                   <p className="text-[#11296B] font-semibold text-lg">

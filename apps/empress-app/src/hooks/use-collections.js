@@ -7,6 +7,7 @@ function useCollections() {
     queryKey: ["collections"],
     refetchOnWindowFocus: true,
     refetchInterval: 15000,
+    refetchIntervalInBackground: true,
   });
 
   return { data, isLoading, error };

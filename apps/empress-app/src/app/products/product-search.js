@@ -1,7 +1,7 @@
 // src/app/products/product-search.js
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { searchProducts } from "@/lib/product-service";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,22 +15,6 @@ const ProductSearch = ({ className = "" }) => {
   const searchRef = useRef(null);
   const router = useRouter();
 
-  // Define performSearch as a useCallback to avoid dependency issues
-  const performSearch = useCallback(async () => {
-    if (query.trim().length > 2) {
-      setIsSearching(true);
-      try {
-        const searchResults = await searchProducts(query);
-        setResults(searchResults.slice(0, 5)); // Limit to 5 results
-        setShowResults(true);
-      } catch (error) {
-        console.error("Error searching products:", error);
-      } finally {
-        setIsSearching(false);
-      }
-    }
-  }, [query]);
-
   // Debounce search to avoid too many requests
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
@@ -42,7 +26,7 @@ const ProductSearch = ({ className = "" }) => {
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [query, performSearch]);
+  }, [query]);
 
   // Handle clicks outside search component
   useEffect(() => {
@@ -57,6 +41,22 @@ const ProductSearch = ({ className = "" }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Perform the search
+  const performSearch = async () => {
+    if (query.trim().length > 2) {
+      setIsSearching(true);
+      try {
+        const searchResults = await searchProducts(query);
+        setResults(searchResults.slice(0, 5)); // Limit to 5 results
+        setShowResults(true);
+      } catch (error) {
+        console.error("Error searching products:", error);
+      } finally {
+        setIsSearching(false);
+      }
+    }
+  };
 
   // Handle search input change
   const handleInputChange = (e) => {

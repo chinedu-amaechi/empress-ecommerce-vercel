@@ -1,9 +1,9 @@
 "use client";
 
 import { useCartContext } from "../contexts/cart-context";
+import CartItem from "./cart-item";
 import Footer from "@/components/layout/footer";
 import { removeFromCart, updateCart } from "@/lib/cart-services";
-import { processPayment } from "@/lib/cart-services";
 import { Trash2, CreditCard, Lock, Minus, Plus } from "lucide-react";
 import Image from "next/image";
 import { useAuthContext } from "../contexts/auth-context";
@@ -140,42 +140,31 @@ function CartPage() {
     if (!user) {
       toast.error("Please sign in to proceed with payment.");
       router.push("/auth/sign-in");
-      return;
     }
 
     try {
-      const paymentData = {
-        cart,
-        total,
-        shipping,
-        tax,
-      };
+      const response = await fetch(`${backendUrl}/api/customer/payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: localStorage.getItem("token"),
+        },
+        body: JSON.stringify({
+          cart,
+          total,
+          shipping,
+          tax,
+        }),
+      });
 
-      // try {
-      //   const response = await fetch(`${backendUrl}/api/customer/payment`, {
-      //     method: "POST",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //       Authorization: localStorage.getItem("token"),
-      //     },
-      //     body: JSON.stringify({
-      //       cart,
-      //       total,
-      //       shipping,
-      //       tax,
-      //     }),
-      //   });
-
-      const result = await processPayment(paymentData);
-
+      const result = await response.json();
+      console.log("Payment response:", result);
       if (result.status === 200) {
         window.location.href = result.data.url;
       } else {
-        toast.error(result.message || "Payment failed. Please try again.");
         console.error("Payment failed:", result.message);
       }
     } catch (error) {
-      toast.error("Error during payment. Please try again.");
       console.error("Error during payment:", error);
     }
   }

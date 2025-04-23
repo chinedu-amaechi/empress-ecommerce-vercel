@@ -10,7 +10,7 @@ const ProductHero = () => {
   const heroImages = [
     "/Empress/Divine/Verdana/IMG_2089 2.jpg",
     "/Empress/Ethereal/Aurelia/IMG_1959.jpg",
-    "/Empress/Heritage/Suyan/IMG_1802.jpg",
+    "/Empress/Heritage/Suyan/IMG_1802.jpg"
   ];
 
   // Ref for chatbot trigger
@@ -30,7 +30,7 @@ const ProductHero = () => {
     setIsVisible(true);
 
     return () => clearInterval(interval);
-  }, [heroImages.length]); // Added heroImages.length as a dependency
+  }, [heroImages]);
 
   return (
     <section className="relative min-h-[100vh] flex items-center overflow-hidden">

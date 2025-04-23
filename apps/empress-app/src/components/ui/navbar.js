@@ -6,8 +6,8 @@ import useCollections from "@/hooks/use-collections";
 import { PersonOutline } from "@mui/icons-material";
 import { ShoppingCart } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image"; // Added missing image import
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -77,7 +77,7 @@ const Navbar = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [activeDropdown, isMenuOpen, isSearchOpen]);
+  }, [activeDropdown, isMenuOpen]);
 
   // Toggle dropdown
   const toggleDropdown = (name) => {
@@ -104,12 +104,12 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center">
+            <Link href="/">
               <Image
-                className={`w-auto transition-all duration-300 ${"h-12"}`}
+                className="w-auto transition-all duration-300 h-12"
                 src="/icons/empress_logo.png"
                 alt="Empress Logo"
-                width={120}
+                width={48}
                 height={48}
               />
             </Link>
@@ -195,8 +195,8 @@ const Navbar = () => {
                           onClick={(e) => {
                             if (pathname === "/auth/sign-in") {
                               e.preventDefault();
+                              setActiveDropdown(null);
                             }
-                            setActiveDropdown(null);
                           }}
                           className="block px-4 py-2.5 text-base text-gray-700 hover:bg-[#11296B]/10 transition-colors duration-200"
                         >
