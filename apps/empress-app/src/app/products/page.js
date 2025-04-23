@@ -2,18 +2,18 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import LoadingState from "@/components/ui/loading-state";
 
 // UI Components
 import Footer from "@/components/layout/footer";
 import ProductCard from "@/components/product/product-card";
 import ProductHero from "./product-hero";
+import Heading from "@/components/ui/heading";
 
 // Data fetching
 import { getAllProducts } from "@/lib/product-service";
 import useCollections from "@/hooks/use-collections";
 
-function ProductsPageContent() {
+function ProductsPage() {
   const searchParams = useSearchParams();
   const collectionFilter = searchParams.get("collection") || "all";
   const searchQuery = searchParams.get("q") || "";
@@ -322,7 +322,7 @@ function ProductsPageContent() {
               {/* Search query tag */}
               {searchQuery && (
                 <div className="flex items-center bg-[#11296B]/10 text-[#11296B] rounded-full px-3 py-1 text-sm">
-                  <span>Search: "{searchQuery}"</span>
+                  <span>Search: &quot;{searchQuery}&quot;</span>
                   <button
                     onClick={() => updateSearchParams("q", "")}
                     className="ml-2 text-[#11296B] hover:text-[#1E96FC]"
@@ -438,8 +438,8 @@ function ProductsPageContent() {
               No products found
             </h2>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              We couldn't find any products matching your current filters. Try
-              adjusting your search criteria or browse our collections.
+              We couldn&apos;t find any products matching your current filters.
+              Try adjusting your search criteria or browse our collections.
             </p>
             <button
               className="inline-flex items-center px-6 py-3 
@@ -466,16 +466,10 @@ function ProductsPageContent() {
   );
 }
 
-// Wrapper component for Suspense boundary
-export default function ProductsPage() {
+export default function Page() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block w-12 h-12 border-4 border-[#11296B]/20 border-t-[#11296B] rounded-full animate-spin mb-4"></div>
-        <p className="text-lg text-gray-600">Loading products...</p>
-      </div>
-    </div>}>
-      <ProductsPageContent />
+    <Suspense fallback={<div>Loading reset form...</div>}>
+      <ProductsPage />
     </Suspense>
   );
 }

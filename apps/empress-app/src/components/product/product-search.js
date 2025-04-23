@@ -26,7 +26,7 @@ const ProductSearch = ({ className = "" }) => {
     }, 300);
 
     return () => clearTimeout(delayDebounce);
-  }, [query, performSearch]);
+  }, [query]);
 
   // Handle clicks outside search component
   useEffect(() => {
@@ -43,7 +43,7 @@ const ProductSearch = ({ className = "" }) => {
   }, []);
 
   // Perform the search
-  const performSearch = useCallback(async () => {
+  const performSearch = async () => {
     if (query.trim().length > 2) {
       setIsSearching(true);
       try {
@@ -56,7 +56,7 @@ const ProductSearch = ({ className = "" }) => {
         setIsSearching(false);
       }
     }
-  }, [query]);
+  };
 
   // Handle search input change
   const handleInputChange = (e) => {

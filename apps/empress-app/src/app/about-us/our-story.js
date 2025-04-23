@@ -53,8 +53,9 @@ const OurStory = () => {
               >
                 Founded in 2015 by Ting Ting Yan, Empress began as a pursuit of
                 perfection in the art of bracelet making. What started as a
-                small studio in TT's home has grown into an atelier celebrated
-                for its distinctive designs and uncompromising quality.
+                small studio in TT&apos;s home has grown into an atelier
+                celebrated for its distinctive designs and uncompromising
+                quality.
               </motion.p>
 
               <motion.p
@@ -63,7 +64,7 @@ const OurStory = () => {
                 transition={{ duration: 0.8, delay: 0.6 }}
                 className="leading-relaxed"
               >
-                Each collection tells a unique story, inspired by TT's deep
+                Each collection tells a unique story, inspired by TT&apos;s deep
                 appreciation for diverse cultural heritages. From the ethereal
                 delicacy of our Celestial Bloom series to the bold statements of
                 our Heritage line, every piece carries the unmistakable Empress

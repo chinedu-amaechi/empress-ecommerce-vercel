@@ -6,7 +6,7 @@ function useProducts() {
     queryFn: getAllProducts,
     queryKey: ["products"],
     refetchOnWindowFocus: true,
-    refetchInterval: 15000, 
+    refetchInterval: 15000,
     refetchIntervalInBackground: true,
   });
 

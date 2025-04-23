@@ -7,6 +7,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 
 // Components
+import Button from "@/components/ui/button";
 import Heading from "@/components/ui/heading";
 import Footer from "@/components/layout/footer";
 import { postForgotPassword } from "@/lib/auth-services";
@@ -75,7 +76,6 @@ function ForgetPassword() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-
       <main className="flex-grow pt-32 pb-16 px-4">
         <div className="max-w-md mx-auto">
           <div className="bg-white rounded-xl shadow-lg p-8">
@@ -89,8 +89,8 @@ function ForgetPassword() {
                 </Heading>
 
                 <p className="text-center text-gray-600 text-sm mb-8">
-                  Enter your email address and we'll send you a link to reset
-                  your password.
+                  Enter your email address and we&apos;ll send you a link to
+                  reset your password.
                 </p>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -158,15 +158,15 @@ function ForgetPassword() {
                 </Heading>
 
                 <p className="text-gray-600 text-sm mb-6">
-                  We've sent a password reset link to
+                  We&apos;ve sent a password reset link to
                   <div className="font-medium mt-1 text-gray-900">
                     {userEmail}
                   </div>
                 </p>
 
                 <p className="text-gray-500 text-xs mb-6">
-                  If you don't see the email in your inbox, please check your
-                  spam folder.
+                  If you don&apos;t see the email in your inbox, please check
+                  your spam folder.
                 </p>
 
                 <div className="flex flex-col gap-3">

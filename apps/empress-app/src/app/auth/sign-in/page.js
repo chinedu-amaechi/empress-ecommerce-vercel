@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuthContext } from "@/app/contexts/auth-context";
+import Button from "@/components/ui/button";
 import Heading from "@/components/ui/heading";
 import { postSignIn } from "@/lib/auth-services";
 import Link from "next/link";

@@ -50,7 +50,7 @@ const OurPhilosophy = () => {
             className="text-lg text-gray-600 leading-relaxed"
           >
             At Empress, we believe in the transformative power of jewelry. Each
-            piece is more than an accessory – it's a vessel of personal
+            piece is more than an accessory - it&apos;s a vessel of personal
             expression, a talisman of confidence, and a companion to your most
             cherished memories.
           </motion.p>

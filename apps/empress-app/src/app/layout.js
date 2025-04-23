@@ -1,3 +1,4 @@
+import EmpressChatbot from "@/components/chatbot/empress-chatbot";
 import "./globals.css";
 import QueryProvider from "./query-provider";
 import { CartContextProvider } from "./contexts/cart-context";
@@ -5,7 +6,6 @@ import { Toaster } from "react-hot-toast";
 import { AuthContextProvider } from "./contexts/auth-context";
 import AutoSignIn from "./auto-sign-in";
 import Navbar from "@/components/ui/navbar";
-import EmpressChatbot from "@/components/chatbot/empress-chatbot";
 
 export const metadata = {
   title: "Empress App",

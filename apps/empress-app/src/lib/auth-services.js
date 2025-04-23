@@ -49,7 +49,6 @@ export async function checkAuth(token) {
     return result;
   } catch (error) {
     console.error("Error during auth check:", error);
-    return { status: 401, message: "Authentication failed", data: null };
   }
 }
 
